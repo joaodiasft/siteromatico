@@ -1,0 +1,494 @@
+<html><head><base href=".">
+    <style>
+    /* Keeping existing styles */
+    :root {
+      --primary: #ff69b4;
+      --secondary: #ff1493;
+      --gold: #ffd700;
+      --white: #fff;
+    }
+    
+    * {
+      box-sizing: border-box;
+      font-family: 'Nunito', sans-serif;
+    }
+    
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(135deg, #ffe6f2 0%, #fff0f5 100%);
+    }
+    
+    .game-container {
+      max-width: 800px;
+      width: 95%;
+      margin: 20px auto;
+      padding: 20px;
+      background: var(--white);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(255, 105, 180, 0.1);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .title {
+      color: var(--secondary);
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .phase {
+      font-size: 1.5em;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+    
+    .question {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    
+    .options {
+      display: grid;
+      gap: 15px;
+    }
+    
+    .option {
+      padding: 15px;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: var(--white);
+      color: var(--primary);
+    }
+    
+    .option:hover:not(:disabled) {
+      background: var(--primary);
+      color: var(--white);
+      transform: translateY(-2px);
+    }
+    
+    .option:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    
+    .score {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: var(--gold);
+      text-align: center;
+    }
+    
+    .hearts {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    
+    .nav-button {
+      padding: 10px 20px;
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-button:hover {
+      background: var(--secondary);
+    }
+    
+    .nav-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .lives {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 1.5em;
+    }
+    
+    .player-form {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .player-form input {
+      padding: 10px;
+      border: 2px solid var(--primary);
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+    
+    .player-form button {
+      padding: 10px 20px;
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    .leaderboard {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+    }
+    
+    .game-content {
+      display: none;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    .reward {
+      text-align: center;
+      margin-top: 20px;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: var(--white);
+      border-radius: 10px;
+      display: none;
+    }
+    
+    @media (max-width: 600px) {
+      .title {
+        font-size: 2em;
+      }
+      
+      .option {
+        padding: 12px;
+      }
+    }
+    </style>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    </head>
+    <body>
+    
+    <div class="game-container">
+      <div class="player-form">
+        <h2>Bem-vindo ao Caminho do Coração de João!</h2>
+        <input type="text" id="playerName" placeholder="Digite seu nome" required>
+        <button onclick="startGame()">Começar</button>
+      </div>
+    
+      <div class="game-content">
+        <div class="header">
+          <h1 class="title">Caminho do Coração 💖</h1>
+          <div class="phase">Fase 1: Primeiros Passos 🌹</div>
+        </div>
+    
+        <div class="lives">❤️❤️❤️</div>
+        <div class="question"></div>
+        <div class="options"></div>
+    
+        <div class="score">
+          Pontuação: 0 💝
+        </div>
+    
+        <div class="reward"></div>
+    
+        <div class="navigation">
+          <button class="nav-button" id="prevButton" disabled>Anterior</button>
+          <button class="nav-button" id="nextButton" disabled>Próxima</button>
+        </div>
+      </div>
+    
+      <div class="leaderboard">
+        <h3>Últimos Jogadores</h3>
+        <div id="leaderboardList"></div>
+      </div>
+    </div>
+    
+    <script>
+    // Keeping existing phases array
+    const phases = [
+      {
+        title: "Fase 1: Primeiros Passos 🌹",
+        question: "Qual foi a data do nosso primeiro encontro? (Aproximada)",
+        options: ["20 de Janeiro", "20 de Dezembro", "10 de Janeiro", "17 de Dezembro"],
+        reward: "🎉 Parabéns! Você ganhou uma rosa virtual! 🌹",
+        correctAnswer: 1
+      },
+      {
+        title: "Fase 2: Construindo Lembranças 🌟",
+        question: "Qual foi o Gênero do primeiro filme que assistimos juntos?",
+        options: ["Comédia Romântica", "Ação", "Aventura", "Terror"],
+        reward: "💐 Você ganhou um buquê virtual! 💐",
+        correctAnswer: 2
+      },
+      {
+        title: "Fase 3: Descobrindo o Amor 💕",
+        question: "Onde foi nosso primeiro beijo?",
+        options: ["Na Sua casa", "No cinema", "No Carro", "Na Igreja"],
+        reward: "💝 Lembrança novamente eternizado!",
+        correctAnswer: 1
+      },
+      {
+        title: "Fase 4: Almas Conectadas ✨",
+        question: "Qual é nossa música especial?",
+        options: ["Perfect - Ed Sheeran", "Leão - Marilia Mendonça", "Imagina - Hugo e Guilherme", "Can't Help Falling in Love - Elvis"],
+        reward: "🎵 Vale uma dança romântica!",
+        correctAnswer: 1
+      },
+      {
+        title: "Fase 5: Momentos Especiais 💫",
+        question: "Qual foi o primeiro presente que te dei?",
+        options: ["Um Buque", "Uma Carta", "Um Chocolate", "Uma Aliança"],
+        reward: "🎁 Esta me devendo um presente agora!",
+        correctAnswer: 2
+      },
+      {
+        title: "Fase 6: Gostos e Preferências ",
+        question: "Qual é minha cor favorita?",
+        options: ["Preto", "Verde", "Roxo", "Rosa"],
+        reward: "🎨 Vale Beijo!",
+        correctAnswer: 0
+      },
+      {
+        title: "Fase 7: Pequenos Detalhes ❤️",
+        question: "Qual é meu apelido carinhoso para você?",
+        options: ["Amor", "Bebê", "Vida", "Princesa"],
+        reward: "💕 Vale momento fofo!",
+        correctAnswer: 0
+      },
+      {
+        title: "Fase 8: Memórias Doces 🍬",
+        question: "Qual é nosso restaurante favorito?",
+        options: ["Roma", "D'Esfira", "Sua Casa", "Carro"],
+        reward: "🍽️ Vale jantar romântico!",
+        correctAnswer: 1
+      },
+      {
+        title: "Fase 9: Lugares Especiais 🌅",
+        question: "Onde foi nosso melhor momento junto?",
+        options: ["Sua Casa", "Carro", "Fazenda", "Minha Casa"],
+        reward: "✈️ Lembranças!",
+        correctAnswer: 1
+      },
+      {
+        title: "Fase 10: Conexão Profunda 🌟",
+        question: "O que mais me encanta em você?",
+        options: ["Seu sorriso", "Sua personalidade", "Seu carinho", "Sua inteligência"],
+        reward: "💫 Me mande um texto Fofo!",
+        correctAnswer: 2
+      },
+      {
+        title: "Fase 11: Momentos de Cumplicidade 👫",
+        question: "Qual é nossa atividade favorita juntos?",
+        options: ["Assistir filmes", "Cozinhar", "Passear", "Conversar"],
+        reward: "🎬 Vale dia especial!",
+        correctAnswer: 1
+      },
+      {
+        title: "Fase 12: Sonhos e Aspirações 🌠",
+        question: "Qual é nosso projeto futuro mais importante?",
+        options: ["Casa própria", "Casamento", "Filhos", "Negócio próprio"],
+        reward: "🏠 Vale planejar o futuro!",
+        correctAnswer: 1
+      },
+      {
+        title: "Fase 13: Momentos de Superação 💪",
+        question: "O que nos faz mais fortes como casal?",
+        options: ["Comunicação", "Confiança", "Amor", "Respeito"],
+        reward: "❤️ Vale momento de reconhecimento!",
+        correctAnswer: 2
+      },
+      {
+        title: "Fase 14: Celebrações Especiais 🎉",
+        question: "Como comemoramos nosso primeiro ano juntos?",
+        options: ["Viagem romântica", "Jantar especial", "Festa surpresa", "Passeio memorável"],
+        reward: "🎊 Vale comemoração especial!",
+        correctAnswer: 3
+      },
+      {
+        title: "Fase 15: Amor Eterno ∞",
+        question: "O que significa amor verdadeiro para nós?",
+        options: ["Companheirismo", "Cumplicidade", "Eternidade", "Felicidade"],
+        reward: "💍 Vale momento inesquecível!",
+        correctAnswer: 0
+      }
+    ];
+    
+    let currentPhase = 0;
+    let score = 0;
+    let lives = 3;
+    let playerName = '';
+    
+    function startGame() {
+      const nameInput = document.getElementById('playerName');
+      if (nameInput.value.trim() === '') {
+        alert('Por favor, digite seu nome para começar!');
+        return;
+      }
+      
+      playerName = nameInput.value.trim();
+      document.querySelector('.player-form').style.display = 'none';
+      document.querySelector('.game-content').style.display = 'block';
+      loadPhase(currentPhase);
+      updateLives();
+    }
+    
+    function updateLives() {
+      document.querySelector('.lives').textContent = '❤️'.repeat(lives);
+    }
+    
+    function saveScore() {
+      const scores = JSON.parse(localStorage.getItem('scores') || '[]');
+      scores.push({
+        name: playerName,
+        score: score,
+        date: new Date().toLocaleDateString()
+      });
+      scores.sort((a, b) => b.score - a.score);
+      localStorage.setItem('scores', JSON.stringify(scores.slice(0, 10)));
+      updateLeaderboard();
+    }
+    
+    function updateLeaderboard() {
+      const scores = JSON.parse(localStorage.getItem('scores') || '[]');
+      const leaderboardList = document.getElementById('leaderboardList');
+      leaderboardList.innerHTML = scores.map(score => 
+        `<div>${score.name} - ${score.score} pontos (${score.date})</div>`
+      ).join('');
+    }
+    
+    function resetGame() {
+      saveScore();
+      currentPhase = 0;
+      score = 0;
+      lives = 3;
+      document.querySelector('.score').textContent = `Pontuação: ${score} 💝`;
+      updateLives();
+      
+      // Show the player form and hide game content
+      document.querySelector('.player-form').style.display = 'block';
+      document.querySelector('.game-content').style.display = 'none';
+      
+      // Clear the player name input
+      document.getElementById('playerName').value = '';
+    }
+    
+    function handleAnswer(selectedIndex) {
+      const currentPhaseData = phases[currentPhase];
+      const options = document.querySelectorAll('.option');
+      
+      options.forEach(opt => opt.disabled = true);
+      
+      if (selectedIndex === currentPhaseData.correctAnswer) {
+        score += 10;
+        document.querySelector('.score').textContent = `Pontuação: ${score} 💝`;
+        
+        for(let i = 0; i < 5; i++) {
+          setTimeout(createHeart, i * 150);
+        }
+        
+        document.querySelector('.reward').textContent = currentPhaseData.reward;
+        document.querySelector('.reward').style.display = 'block';
+      } else {
+        lives--;
+        updateLives();
+        
+        if (lives <= 0) {
+          alert('Game Over! Você perdeu todas as vidas. Por favor, digite seu nome para começar novamente.');
+          resetGame();
+          return;
+        }
+      }
+      
+      document.getElementById('nextButton').disabled = false;
+    }
+    
+    // Keep existing functions
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.classList.add('hearts');
+      heart.innerHTML = '💝';
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.animation = `float ${Math.random() * 2 + 3}s linear`;
+      heart.style.fontSize = Math.random() * 20 + 20 + 'px';
+      
+      document.body.appendChild(heart);
+      
+      setTimeout(() => {
+        heart.remove();
+      }, 5000);
+    }
+    
+    function loadPhase(phaseIndex) {
+      const phase = phases[phaseIndex];
+      document.querySelector('.phase').textContent = phase.title;
+      document.querySelector('.question').textContent = phase.question;
+      
+      const optionsContainer = document.querySelector('.options');
+      optionsContainer.innerHTML = '';
+      
+      phase.options.forEach((optionText, index) => {
+        const button = document.createElement('button');
+        button.classList.add('option');
+        button.textContent = `${String.fromCharCode(65 + index)}) ${optionText}`;
+        button.addEventListener('click', () => handleAnswer(index));
+        optionsContainer.appendChild(button);
+      });
+      
+      document.querySelector('.reward').style.display = 'none';
+      updateNavigationButtons();
+    }
+    
+    function updateNavigationButtons() {
+      document.getElementById('prevButton').disabled = currentPhase === 0;
+      document.getElementById('nextButton').disabled = true;
+    }
+    
+    document.getElementById('prevButton').addEventListener('click', () => {
+      if (currentPhase > 0) {
+        currentPhase--;
+        loadPhase(currentPhase);
+      }
+    });
+    
+    document.getElementById('nextButton').addEventListener('click', () => {
+      if (currentPhase < phases.length - 1) {
+        currentPhase++;
+        loadPhase(currentPhase);
+      } else {
+        alert('Parabéns! Você completou todas as fases! Foi merecido amor , sei que voce e a melhor');
+        saveScore();
+        resetGame();
+      }
+    });
+    
+    // Initialize leaderboard
+    updateLeaderboard();
+    </script>
+    
+    </body></html>
